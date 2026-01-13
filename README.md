@@ -14,11 +14,11 @@ A lightweight car detection and viewpoint classification model optimized for mob
 
 ## Model Download
 
-Download the pre-trained model files from Google Drive:
+Download the pre-trained model from Google Drive:
 
-**[Download Model (model.onnx + model.onnx.data)](https://drive.google.com/file/d/1n-Li5yV-zbCUb3rxE5SEUdvsUzxKkjWH/view)**
+**[Download model.onnx](https://drive.google.com/file/d/1n-Li5yV-zbCUb3rxE5SEUdvsUzxKkjWH/view)**
 
-Extract and place `model.onnx` and `model.onnx.data` in your `assets/` folder.
+Place `model.onnx` in your `assets/` folder.
 
 ## Quick Start
 
@@ -33,7 +33,6 @@ Extract and place `model.onnx` and `model.onnx.data` in your `assets/` folder.
 ```
 your-project/
 ├── model.onnx
-├── model.onnx.data
 ├── labels.json
 └── car-capture.js  (see below)
 ```
