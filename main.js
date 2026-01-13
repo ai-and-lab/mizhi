@@ -1,5 +1,5 @@
 import { startCamera, captureFrame } from "./camera.js";
-import { CarCapture } from "./car-capture.js";
+import { Mizhi } from "./mizhi.js";
 import { Overlay } from "./overlay.js";
 
 const video = document.getElementById("video");
@@ -40,7 +40,7 @@ async function setup() {
   statusEl.textContent = "Loading model...";
 
   // Initialize detector
-  detector = new CarCapture();
+  detector = new Mizhi();
   await detector.init("./assets/model.onnx", "./assets/labels.json");
 
   statusEl.textContent = "Starting camera...";
@@ -73,7 +73,7 @@ async function setup() {
   resizeOverlay();
   window.addEventListener("resize", resizeOverlay);
 
-  const INPUT_SIZE = CarCapture.INPUT_SIZE;
+  const INPUT_SIZE = Mizhi.INPUT_SIZE;
   debugCanvas.width = INPUT_SIZE;
   debugCanvas.height = INPUT_SIZE;
 

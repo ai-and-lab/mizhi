@@ -1,6 +1,6 @@
-# Car Capture Lite - Web Integration Guide
+# Mizhi - Web Integration Guide
 
-A lightweight car detection and viewpoint classification model optimized for mobile web browsers.
+A lightweight detection and viewpoint classification model optimized for mobile web browsers.
 
 ## Model Outputs
 
@@ -34,19 +34,19 @@ Place `model.onnx` in your `assets/` folder.
 your-project/
 ├── model.onnx
 ├── labels.json
-└── car-capture.js  (see below)
+└── mizhi.js
 ```
 
 ### 3. Create Inference Module
 
-Create `car-capture.js`:
+Create `mizhi.js`:
 
 ```javascript
 const INPUT_SIZE = 320;
 const MEAN = [0.485, 0.456, 0.406];
 const STD = [0.229, 0.224, 0.225];
 
-export class CarCapture {
+export class Mizhi {
   constructor() {
     this.session = null;
     this.labels = null;
@@ -188,9 +188,9 @@ export class CarCapture {
 ### Basic Usage
 
 ```javascript
-import { CarCapture } from './car-capture.js';
+import { Mizhi } from './mizhi.js';
 
-const detector = new CarCapture();
+const detector = new Mizhi();
 await detector.init('./assets/model.onnx', './assets/labels.json');
 
 // From video element
@@ -214,11 +214,11 @@ console.log(result);
 ### Integration with Camera Capture Workflow
 
 ```javascript
-import { CarCapture } from './car-capture.js';
+import { Mizhi } from './mizhi.js';
 
 class CameraCapture {
   constructor() {
-    this.detector = new CarCapture();
+    this.detector = new Mizhi();
     this.video = document.createElement('video');
     this.canvas = document.createElement('canvas');
   }
@@ -254,7 +254,7 @@ class CameraCapture {
   }
 
   getGuidance(result) {
-    if (result.usable < 0.6) return 'Point camera at vehicle';
+    if (result.usable < 0.6) return 'Point camera at target';
 
     const [x1, y1, x2, y2] = result.bbox;
     const { origW, origH } = result.meta;

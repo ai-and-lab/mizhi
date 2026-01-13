@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Car Capture Module Test</title>
+  <title>Mizhi Module Test</title>
   <style>
     body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #eee; }
     .pass { color: #4f4; }
@@ -11,13 +11,13 @@
   </style>
 </head>
 <body>
-  <h2>Car Capture Module Test</h2>
+  <h2>Mizhi Module Test</h2>
   <div id="output">Loading...</div>
   <canvas id="result"></canvas>
 
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
   <script type="module">
-    import { CarCapture } from './car-capture.js';
+    import { Mizhi } from './mizhi.js';
 
     const output = document.getElementById('output');
     const canvas = document.getElementById('result');
@@ -37,8 +37,8 @@
       try {
         // Test 1: Module loads
         log('1. Testing module import...');
-        const detector = new CarCapture();
-        log('   ✓ CarCapture class instantiated', true);
+        const detector = new Mizhi();
+        log('   ✓ Mizhi class instantiated', true);
 
         // Test 2: Init
         log('\n2. Testing init...');

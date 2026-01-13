@@ -1,10 +1,10 @@
 /**
- * Car Capture Lite - Standalone Inference Module
+ * Mizhi - Standalone Inference Module
  *
- * A modular car detection and viewpoint classification module for web apps.
+ * A modular detection and viewpoint classification module for web apps.
  *
  * Usage:
- *   const detector = new CarCapture();
+ *   const detector = new Mizhi();
  *   await detector.init('./model.onnx', './labels.json');
  *   const result = await detector.predict(canvas);
  */
@@ -13,7 +13,7 @@ const INPUT_SIZE = 320;
 const MEAN = [0.485, 0.456, 0.406];
 const STD = [0.229, 0.224, 0.225];
 
-export class CarCapture {
+export class Mizhi {
   constructor() {
     this.session = null;
     this.labels = null;
@@ -264,4 +264,4 @@ export class CarCapture {
   }
 }
 
-export default CarCapture;
+export default Mizhi;
