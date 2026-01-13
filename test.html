@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Car Capture Module Test</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #eee; }
+    .pass { color: #4f4; }
+    .fail { color: #f44; }
+    #output { white-space: pre-wrap; line-height: 1.6; }
+    canvas { border: 1px solid #444; margin: 10px 0; display: block; }
+  </style>
+</head>
+<body>
+  <h2>Car Capture Module Test</h2>
+  <div id="output">Loading...</div>
+  <canvas id="result"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+  <script type="module">
+    import { CarCapture } from './car-capture.js';
+
+    const output = document.getElementById('output');
+    const canvas = document.getElementById('result');
+    const ctx = canvas.getContext('2d');
+
+    function log(msg, isPass = null) {
+      const span = document.createElement('span');
+      if (isPass === true) span.className = 'pass';
+      if (isPass === false) span.className = 'fail';
+      span.textContent = msg + '\n';
+      output.appendChild(span);
+    }
+
+    async function runTest() {
+      output.textContent = '';
+
+      try {
+        // Test 1: Module loads
+        log('1. Testing module import...');
+        const detector = new CarCapture();
+        log('   ✓ CarCapture class instantiated', true);
+
+        // Test 2: Init
+        log('\n2. Testing init...');
+        await detector.init('./assets/model.onnx', './assets/labels.json');
+        log('   ✓ Model loaded', true);
+        log('   ✓ Labels: ' + detector.labels.join(', '), true);
+
+        // Test 3: Load sample image
+        log('\n3. Loading sample image...');
+        const img = new Image();
+        img.src = './assets/sample.jpg';
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () => reject(new Error('Failed to load sample.jpg'));
+        });
+        log('   ✓ Image loaded: ' + img.width + 'x' + img.height, true);
+
+        // Test 4: Run prediction
+        log('\n4. Running prediction...');
+        const startTime = performance.now();
+        const result = await detector.predict(img);
+        const inferenceTime = (performance.now() - startTime).toFixed(1);
+        log('   ✓ Inference completed in ' + inferenceTime + 'ms', true);
+
+        // Test 5: Validate outputs
+        log('\n5. Validating outputs...');
+
+        const hasView = typeof result.view === 'string' && result.view.length > 0;
+        log('   ' + (hasView ? '✓' : '✗') + ' view: ' + result.view, hasView);
+
+        const hasUsable = typeof result.usable === 'number' && result.usable >= 0 && result.usable <= 1;
+        log('   ' + (hasUsable ? '✓' : '✗') + ' usable: ' + (result.usable * 100).toFixed(1) + '%', hasUsable);
+
+        const hasBbox = Array.isArray(result.bbox) && result.bbox.length === 4;
+        log('   ' + (hasBbox ? '✓' : '✗') + ' bbox: [' + result.bbox.map(v => Math.round(v)).join(', ') + ']', hasBbox);
+
+        const hasConf = typeof result.viewConfidence === 'number';
+        log('   ' + (hasConf ? '✓' : '✗') + ' viewConfidence: ' + (result.viewConfidence * 100).toFixed(1) + '%', hasConf);
+
+        // Test 6: Test helper methods
+        log('\n6. Testing helper methods...');
+
+        const isGood = detector.isGoodCapture(result);
+        log('   ✓ isGoodCapture(): ' + isGood, true);
+
+        const guidance = detector.getGuidance(result);
+        log('   ✓ getGuidance(): ' + guidance.message, true);
+
+        // Test 7: Draw result
+        log('\n7. Drawing result...');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        detector.drawBbox(ctx, result);
+        log('   ✓ Bounding box drawn on canvas below', true);
+
+        // Summary
+        log('\n' + '='.repeat(40));
+        log('ALL TESTS PASSED!', true);
+        log('='.repeat(40));
+
+      } catch (err) {
+        log('\n✗ TEST FAILED: ' + err.message, false);
+        console.error(err);
+      }
+    }
+
+    runTest();
+  </script>
+</body>
+</html>

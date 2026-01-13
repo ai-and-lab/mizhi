@@ -1,0 +1,11 @@
+{
+  "image": "sample.jpg",
+  "bbox_xyxy": [
+    11,
+    11,
+    1809,
+    1727
+  ],
+  "view": "front",
+  "usable": 1
+}

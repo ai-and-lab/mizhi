@@ -1,0 +1,12 @@
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Node
+node_modules/
+
+# Model files (download separately)
+assets/*.onnx
+assets/*.onnx.data
