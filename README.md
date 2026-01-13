@@ -12,6 +12,14 @@ A lightweight car detection and viewpoint classification model optimized for mob
 
 **View Classes:** `front`, `rear`, `left`, `right`, `front_left`, `rear_left`, `front_right`, `rear_right`
 
+## Model Download
+
+Download the pre-trained model files from Google Drive:
+
+**[Download Model (model.onnx + model.onnx.data)](https://drive.google.com/file/d/1n-Li5yV-zbCUb3rxE5SEUdvsUzxKkjWH/view)**
+
+Extract and place `model.onnx` and `model.onnx.data` in your `assets/` folder.
+
 ## Quick Start
 
 ### 1. Include ONNX Runtime
