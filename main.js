@@ -7,6 +7,7 @@ const overlayCanvas = document.getElementById("overlay");
 const statusEl = document.getElementById("status");
 const debugToggle = document.getElementById("toggle-debug");
 const captureBtn = document.getElementById("capture-btn");
+const saveBtn = document.getElementById("save-btn");
 const debugWrap = document.getElementById("debug-wrap");
 const debugCanvas = document.getElementById("debug");
 
@@ -17,6 +18,7 @@ let showDebug = false;
 let imageCapture = null;
 let overlay = null;
 let detector = null;
+let lastResult = null;
 
 debugToggle.addEventListener("click", () => {
   showDebug = !showDebug;
@@ -130,6 +132,9 @@ async function setup() {
       dbgCtx.strokeRect(x1, y1, bw, bh);
     }
 
+    // Store result for saving
+    lastResult = result;
+
     console.log("prediction", {
       view: result.view,
       viewConfidence: result.viewConfidence.toFixed(3),
@@ -139,9 +144,34 @@ async function setup() {
       guidance: detector.getGuidance(result),
     });
 
+    // Show save button after capture
+    saveBtn.style.display = "inline-block";
+
     statusEl.textContent = "";
     statusEl.style.display = "none";
   }
+
+  function saveFrame() {
+    if (!lastResult) return;
+
+    // Generate filename with timestamp and prediction info
+    const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const view = lastResult.view;
+    const usable = Math.round(lastResult.usable * 100);
+    const filename = `mizhi_${ts}_${view}_u${usable}.jpg`;
+
+    // Convert canvas to blob and download
+    captureCanvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, "image/jpeg", 0.92);
+  }
+
+  saveBtn.addEventListener("click", saveFrame);
 
   captureBtn.addEventListener("click", () => {
     runOnce().catch((err) => {
