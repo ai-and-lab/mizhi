@@ -307,4 +307,63 @@ export class Overlay {
       ctx.fillText(text, 12, h - 20);
     }
   }
+
+  drawCoveragePanel(viewStatuses) {
+    const ctx = this.ctx;
+    const w = this.displayWidth || this.canvas.width;
+    const labels = [
+      ['F', 'front'], ['RE', 'rear'], ['L', 'left'], ['R', 'right'],
+      ['FL', 'front_left'], ['FR', 'front_right'], ['RL', 'rear_left'], ['RR', 'rear_right'],
+    ];
+    const pillW = 36;
+    const pillH = 22;
+    const gap = 4;
+    const cols = 4;
+    const padRight = 10;
+    const padTop = 10;
+    const panelW = cols * pillW + (cols - 1) * gap;
+    const startX = w - panelW - padRight;
+    const startY = padTop;
+
+    const colors = { uncovered: 'rgba(120,120,120,0.7)', partial: 'rgba(230,160,40,0.85)', full: 'rgba(60,190,90,0.85)' };
+
+    ctx.save();
+    ctx.font = "bold 11px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    for (let i = 0; i < labels.length; i++) {
+      const [abbr, key] = labels[i];
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = startX + col * (pillW + gap);
+      const y = startY + row * (pillH + gap);
+      const status = viewStatuses[key] || 'uncovered';
+
+      ctx.fillStyle = colors[status];
+      ctx.beginPath();
+      ctx.roundRect(x, y, pillW, pillH, 6);
+      ctx.fill();
+
+      ctx.fillStyle = "#fff";
+      ctx.fillText(abbr, x + pillW / 2, y + pillH / 2);
+    }
+    ctx.restore();
+  }
+
+  drawWarning(message) {
+    const ctx = this.ctx;
+    const w = this.displayWidth || this.canvas.width;
+    const h = this.displayHeight || this.canvas.height;
+    const barH = 48;
+    ctx.save();
+    ctx.fillStyle = "rgba(200,40,40,0.75)";
+    ctx.fillRect(0, h - barH, w, barH);
+    ctx.font = "bold 16px sans-serif";
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(message, w / 2, h - barH / 2);
+    ctx.restore();
+  }
 }

@@ -1,100 +1,29 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Mizhi</title>
     <style>
-      :root {
-        color-scheme: light;
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html, body, #root {
+        width: 100%;
+        height: 100%;
       }
       body {
-        margin: 0;
         font-family: "Helvetica Neue", Arial, sans-serif;
         background: #101417;
         color: #f5f7f9;
       }
-      .app {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-      }
-      video,
-      canvas {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-      }
-      video {
-        background: #000;
-      }
-      .hud {
-        position: absolute;
-        left: 12px;
-        right: 12px;
-        top: 12px;
-        z-index: 4;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        font-size: 14px;
-      }
-      .pill {
-        background: rgba(0, 0, 0, 0.45);
-        padding: 8px 12px;
-        border-radius: 999px;
-        backdrop-filter: blur(6px);
-      }
-      #debug-wrap {
-        position: absolute;
-        right: 12px;
-        bottom: 12px;
-        width: 140px;
-        height: 140px;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        background: rgba(0, 0, 0, 0.4);
-        display: none;
-        z-index: 4;
-      }
-      #debug {
-        width: 100%;
-        height: 100%;
-      }
-      button {
-        background: rgba(255, 255, 255, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: #fff;
-        padding: 8px 12px;
-        border-radius: 999px;
-      }
     </style>
   </head>
   <body>
-    <div class="app">
-      <video id="video" playsinline autoplay muted></video>
-      <canvas id="overlay"></canvas>
-      <div class="hud">
-        <div class="pill" id="status">Loading model...</div>
-        <div>
-          <button id="capture-btn">Capture</button>
-          <button id="save-btn" style="display: none;">Save Frame</button>
-          <button id="toggle-debug">Debug</button>
-        </div>
-      </div>
-      <div id="debug-wrap">
-        <canvas id="debug"></canvas>
-      </div>
-    </div>
+    <div id="root"></div>
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-    <script type="module" src="./main.js"></script>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

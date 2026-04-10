@@ -1,29 +1,28 @@
 import { startCamera, captureFrame } from "./camera.js";
 import { Mizhi } from "./mizhi.js";
 import { Overlay } from "./overlay.js";
+import { CoverageSession } from "./coverage.js";
 
 const video = document.getElementById("video");
 const overlayCanvas = document.getElementById("overlay");
 const statusEl = document.getElementById("status");
-const debugToggle = document.getElementById("toggle-debug");
 const captureBtn = document.getElementById("capture-btn");
 const saveBtn = document.getElementById("save-btn");
-const debugWrap = document.getElementById("debug-wrap");
-const debugCanvas = document.getElementById("debug");
+const sessionBtn = document.getElementById("session-btn");
+const confirmBtn = document.getElementById("confirm-btn");
 
 const captureCanvas = document.createElement("canvas");
 const captureCtx = captureCanvas.getContext("2d");
 
-let showDebug = false;
 let imageCapture = null;
 let overlay = null;
 let detector = null;
 let lastResult = null;
 
-debugToggle.addEventListener("click", () => {
-  showDebug = !showDebug;
-  debugWrap.style.display = showDebug ? "block" : "none";
-});
+// Session state
+let session = null;
+let animFrameId = null;
+let inferenceRunning = false;
 
 async function requestLandscape() {
   try {
@@ -76,8 +75,6 @@ async function setup() {
   window.addEventListener("resize", resizeOverlay);
 
   const INPUT_SIZE = Mizhi.INPUT_SIZE;
-  debugCanvas.width = INPUT_SIZE;
-  debugCanvas.height = INPUT_SIZE;
 
   overlay = new Overlay(overlayCanvas, detector.labels, INPUT_SIZE);
   resizeOverlay();
@@ -92,23 +89,22 @@ async function setup() {
     return await createImageBitmap(captureCanvas);
   }
 
+  // --- On-demand capture ---
   async function runOnce() {
     await requestLandscape();
     statusEl.textContent = "Capturing...";
     statusEl.style.display = "block";
 
-    // Capture frame
     const bitmap = await captureBitmap();
     captureCanvas.width = bitmap.width;
     captureCanvas.height = bitmap.height;
     captureCtx.drawImage(bitmap, 0, 0);
+    bitmap.close();
 
-    // Run inference using CarCapture module
     const result = await detector.predict(captureCanvas);
 
     resizeOverlay();
 
-    // Render overlay using existing Overlay class
     overlay.renderSingle(
       result.bboxNormalized,
       result.usable,
@@ -116,23 +112,6 @@ async function setup() {
       result.meta
     );
 
-    // Draw debug view
-    if (showDebug) {
-      const dbgCtx = debugCanvas.getContext("2d");
-      dbgCtx.drawImage(result.letterCanvas, 0, 0);
-
-      // Draw bbox on letterboxed image
-      const [cx, cy, w, h] = result.bboxNormalized;
-      const x1 = (cx - w / 2) * INPUT_SIZE;
-      const y1 = (cy - h / 2) * INPUT_SIZE;
-      const bw = w * INPUT_SIZE;
-      const bh = h * INPUT_SIZE;
-      dbgCtx.strokeStyle = "rgba(0, 255, 0, 0.9)";
-      dbgCtx.lineWidth = 2;
-      dbgCtx.strokeRect(x1, y1, bw, bh);
-    }
-
-    // Store result for saving
     lastResult = result;
 
     console.log("prediction", {
@@ -144,23 +123,18 @@ async function setup() {
       guidance: detector.getGuidance(result),
     });
 
-    // Show save button after capture
     saveBtn.style.display = "inline-block";
-
     statusEl.textContent = "";
     statusEl.style.display = "none";
   }
 
   function saveFrame() {
     if (!lastResult) return;
-
-    // Generate filename with timestamp and prediction info
     const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
     const view = lastResult.view;
     const usable = Math.round(lastResult.usable * 100);
     const filename = `mizhi_${ts}_${view}_u${usable}.jpg`;
 
-    // Convert canvas to blob and download
     captureCanvas.toBlob((blob) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -171,6 +145,94 @@ async function setup() {
     }, "image/jpeg", 0.92);
   }
 
+  // --- Continuous session ---
+  async function continuousInfer() {
+    if (!session || !session.active) return;
+    if (inferenceRunning) {
+      animFrameId = requestAnimationFrame(continuousInfer);
+      return;
+    }
+
+    inferenceRunning = true;
+    try {
+      const bitmap = await captureBitmap();
+      captureCanvas.width = bitmap.width;
+      captureCanvas.height = bitmap.height;
+      captureCtx.drawImage(bitmap, 0, 0);
+      bitmap.close();
+
+      const result = await detector.predict(captureCanvas);
+      lastResult = result;
+
+      resizeOverlay();
+      overlay.update(
+        result.bboxNormalized,
+        result.usable,
+        result.viewIndex,
+        result.meta
+      );
+
+      session.trackFrame(overlay.usableEMA);
+      overlay.drawCoveragePanel(session.getAllViews());
+
+      if (session.isCarOutOfView()) {
+        overlay.drawWarning("Car not detected — point camera at vehicle");
+      }
+    } catch (err) {
+      console.error("Inference error:", err);
+    }
+    inferenceRunning = false;
+
+    if (session && session.active) {
+      animFrameId = requestAnimationFrame(continuousInfer);
+    }
+  }
+
+  async function startSession() {
+    await requestLandscape();
+    session = new CoverageSession();
+    session.start();
+    lastResult = null;
+
+    // Hide on-demand buttons, show confirm
+    captureBtn.style.display = "none";
+    saveBtn.style.display = "none";
+    confirmBtn.style.display = "inline-block";
+    sessionBtn.textContent = "End Session";
+
+    animFrameId = requestAnimationFrame(continuousInfer);
+  }
+
+  function stopSession() {
+    if (session) session.stop();
+    if (animFrameId) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
+    inferenceRunning = false;
+    session = null;
+    lastResult = null;
+
+    // Exit fullscreen
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    if (screen.orientation && screen.orientation.unlock) {
+      screen.orientation.unlock();
+    }
+
+    // Clear overlay and restore on-demand buttons
+    const ctx = overlayCanvas.getContext("2d");
+    const dw = overlay ? (overlay.displayWidth || overlayCanvas.width) : overlayCanvas.width;
+    const dh = overlay ? (overlay.displayHeight || overlayCanvas.height) : overlayCanvas.height;
+    ctx.clearRect(0, 0, dw, dh);
+
+    captureBtn.style.display = "inline-block";
+    confirmBtn.style.display = "none";
+    sessionBtn.textContent = "Start Session";
+  }
+
+  // --- Event listeners ---
   saveBtn.addEventListener("click", saveFrame);
 
   captureBtn.addEventListener("click", () => {
@@ -178,6 +240,43 @@ async function setup() {
       statusEl.textContent = `Error: ${err.message}`;
       console.error(err);
     });
+  });
+
+  sessionBtn.addEventListener("click", () => {
+    if (session && session.active) {
+      stopSession();
+    } else {
+      startSession();
+    }
+  });
+
+  confirmBtn.addEventListener("click", () => {
+    if (!session || !session.active || !lastResult) return;
+    if (lastResult.usable < 0.6) return;
+
+    const info = overlay.lastInfo;
+    if (!info) return;
+
+    const [x1, y1, x2, y2] = info.bboxOrig;
+    const edgeMargin = 0.06;
+    const isEdgeTouching =
+      x1 / info.origW < edgeMargin ||
+      x2 / info.origW > 1 - edgeMargin ||
+      y1 / info.origH < edgeMargin ||
+      y2 / info.origH > 1 - edgeMargin;
+
+    session.confirmView(info.viewName, isEdgeTouching);
+
+    // Brief visual feedback
+    confirmBtn.style.background = isEdgeTouching ? "#e0a020" : "#30b050";
+    confirmBtn.textContent = isEdgeTouching ? "Partial!" : "Confirmed!";
+    setTimeout(() => {
+      confirmBtn.style.background = "";
+      confirmBtn.textContent = "Confirm View";
+    }, 600);
+
+    const progress = session.getProgress();
+    console.log("View confirmed:", info.viewName, isEdgeTouching ? "(partial)" : "(full)", progress);
   });
 }
 
